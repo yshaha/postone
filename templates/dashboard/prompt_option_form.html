@@ -1,0 +1,206 @@
+{% extends 'base/base.html' %}
+{% block title %}옵션 관리 - 1post{% endblock %}
+{% block page_title %}톤/스타일 옵션 관리{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+    <!-- 옵션 그룹 목록 -->
+    <div class="col-12 col-lg-5">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-semibold mb-0">옵션 그룹</h6>
+                <button class="btn btn-sm btn-primary" onclick="showGroupForm()">
+                    <i class="bi bi-plus-lg"></i> 그룹 추가
+                </button>
+            </div>
+
+            <!-- 그룹 추가 폼 -->
+            <div id="groupForm" style="display:none;" class="mb-3 p-3 rounded" style="background:#f8f9fa;">
+                <form method="post" action="{% url 'dashboard:option_group_create' channel_prompt.pk %}">
+                    {% csrf_token %}
+                    <div class="mb-2">
+                        <input type="text" name="label" class="form-control form-control-sm"
+                               placeholder="그룹 표시명 (예: 톤, 길이, 해시태그)" required>
+                    </div>
+                    <div class="mb-2">
+                        <input type="text" name="name" class="form-control form-control-sm"
+                               placeholder="그룹 키 (예: tone, length)" required>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-sm btn-primary">추가</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary"
+                                onclick="hideGroupForm()">취소</button>
+                    </div>
+                </form>
+            </div>
+
+            {% if option_groups %}
+            <div class="list-group list-group-flush">
+                {% for group in option_groups %}
+                <div class="list-group-item px-0 py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fw-semibold small">{{ group.label }}</div>
+                            <div class="text-muted" style="font-size:11px;">
+                                옵션 {{ group.options.count }}개
+                            </div>
+                        </div>
+                        <div class="d-flex gap-1">
+                            <a href="?group={{ group.pk }}"
+                               class="btn btn-sm {% if selected_group.pk == group.pk %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                                관리
+                            </a>
+                            <a href="{% url 'dashboard:option_group_delete' group.pk %}"
+                               class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted text-center py-3 mb-0 small">등록된 옵션 그룹이 없습니다.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 옵션 목록 -->
+    <div class="col-12 col-lg-7">
+        {% if selected_group %}
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-semibold mb-0">{{ selected_group.label }} 옵션</h6>
+                <button class="btn btn-sm btn-primary" onclick="showOptionForm()">
+                    <i class="bi bi-plus-lg"></i> 옵션 추가
+                </button>
+            </div>
+
+            <!-- 옵션 추가 폼 -->
+            <div id="optionForm" style="display:none;" class="mb-3 p-3 rounded border">
+                <form method="post" action="{% url 'dashboard:option_create' selected_group.pk %}">
+                    {% csrf_token %}
+                    <div class="mb-2">
+                        <label class="form-label small fw-semibold">옵션명</label>
+                        <input type="text" name="label" id="optionLabel"
+                               class="form-control form-control-sm"
+                               placeholder="예: 친근하게, 전문적으로" required>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small fw-semibold">
+                            프롬프트 Snippet
+                            <button type="button" class="btn btn-xs btn-outline-primary ms-2"
+                                    style="font-size:11px; padding:1px 8px;"
+                                    onclick="generateSnippet()">
+                                <i class="bi bi-magic"></i> Claude 자동생성
+                            </button>
+                        </label>
+                        <textarea name="snippet" id="snippetText"
+                                  class="form-control form-control-sm" rows="4"
+                                  placeholder="Claude에게 전달할 프롬프트 조각" required></textarea>
+                        <div id="snippetLoading" style="display:none;" class="small text-muted mt-1">
+                            <span class="spinner-border spinner-border-sm"></span> 생성 중...
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <div class="form-check">
+                            <input type="checkbox" name="is_default" class="form-check-input" id="isDefault">
+                            <label class="form-check-label small" for="isDefault">기본 선택</label>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-sm btn-primary">저장</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary"
+                                onclick="hideOptionForm()">취소</button>
+                    </div>
+                </form>
+            </div>
+
+            {% if selected_group.options.all %}
+            <div class="list-group list-group-flush">
+                {% for opt in selected_group.options.all %}
+                <div class="list-group-item px-0 py-3">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1 me-2">
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <span class="fw-semibold small">{{ opt.label }}</span>
+                                {% if opt.is_default %}
+                                <span class="badge bg-primary" style="font-size:10px;">기본</span>
+                                {% endif %}
+                            </div>
+                            <div class="small text-muted p-2 rounded"
+                                 style="background:#f8f9fa; white-space:pre-wrap; font-size:12px;">{{ opt.snippet }}</div>
+                        </div>
+                        <div class="d-flex gap-1 flex-shrink-0">
+                            <a href="{% url 'dashboard:option_delete' opt.pk %}"
+                               class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted text-center py-3 mb-0 small">등록된 옵션이 없습니다.</p>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="stat-card text-center py-5">
+            <i class="bi bi-sliders fs-1 text-muted"></i>
+            <p class="text-muted mt-2">왼쪽에서 옵션 그룹을 선택하세요.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showGroupForm() {
+    document.getElementById('groupForm').style.display = 'block';
+}
+function hideGroupForm() {
+    document.getElementById('groupForm').style.display = 'none';
+}
+function showOptionForm() {
+    document.getElementById('optionForm').style.display = 'block';
+}
+function hideOptionForm() {
+    document.getElementById('optionForm').style.display = 'none';
+}
+
+function generateSnippet() {
+    const label = document.getElementById('optionLabel').value.trim();
+    if (!label) {
+        alert('옵션명을 먼저 입력하세요.');
+        return;
+    }
+    document.getElementById('snippetLoading').style.display = 'block';
+    document.getElementById('snippetText').value = '';
+
+    fetch('/api/generate-snippet/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}',
+        },
+        body: JSON.stringify({
+            channel: '{{ channel_prompt.channel.name }}',
+            content_type: '{{ channel_prompt.content_type.name }}',
+            group_label: '{{ selected_group.label }}',
+            option_label: label,
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        document.getElementById('snippetText').value = data.snippet;
+        document.getElementById('snippetLoading').style.display = 'none';
+    })
+    .catch(() => {
+        document.getElementById('snippetLoading').style.display = 'none';
+        alert('생성 중 오류가 발생했습니다.');
+    });
+}
+</script>
+{% endblock %}

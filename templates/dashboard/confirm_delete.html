@@ -1,0 +1,16 @@
+{% extends 'base/base.html' %}
+{% block title %}삭제 확인 - 1post{% endblock %}
+{% block page_title %}삭제 확인{% endblock %}
+{% block content %}
+<div class="stat-card" style="max-width:400px;">
+    <p class="mb-4"><strong>{{ object }}</strong>을(를) 삭제하시겠습니까?<br>
+    <span class="text-danger small">삭제 후 복구할 수 없습니다.</span></p>
+    <form method="post">
+        {% csrf_token %}
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-danger">삭제</button>
+            <a href="{% url back_url %}" class="btn btn-outline-secondary">취소</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

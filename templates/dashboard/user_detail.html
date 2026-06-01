@@ -1,0 +1,116 @@
+{% extends 'base/base.html' %}
+{% block title %}{{ target_user.username }} - 1post{% endblock %}
+{% block page_title %}회원 상세{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+    <!-- 기본 정보 -->
+    <div class="col-12 col-lg-6">
+        <div class="stat-card">
+            <h6 class="fw-semibold mb-3">기본 정보</h6>
+            <form method="post" action="{% url 'dashboard:user_edit' target_user.pk %}">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">아이디</label>
+                    <input type="text" class="form-control" value="{{ target_user.username }}" disabled>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">이름</label>
+                    <input type="text" name="first_name" class="form-control"
+                           value="{{ target_user.first_name }}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">이메일</label>
+                    <input type="email" name="email" class="form-control"
+                           value="{{ target_user.email }}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">회사</label>
+                    <input type="text" name="company" class="form-control"
+                           value="{{ target_user.company }}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">연락처</label>
+                    <input type="text" name="phone" class="form-control"
+                           value="{{ target_user.phone }}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">역할</label>
+                    <select name="role" class="form-select">
+                        <option value="master" {% if target_user.role == 'master' %}selected{% endif %}>마스터</option>
+                        <option value="admin" {% if target_user.role == 'admin' %}selected{% endif %}>관리자</option>
+                        <option value="member" {% if target_user.role == 'member' %}selected{% endif %}>멤버</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <div class="form-check">
+                        <input type="checkbox" name="is_active" class="form-check-input" id="isActive"
+                               {% if target_user.is_active %}checked{% endif %}>
+                        <label class="form-check-label" for="isActive">활성화</label>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm">저장</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 크레딧 관리 -->
+    <div class="col-12 col-lg-6">
+        <div class="stat-card mb-3">
+            <h6 class="fw-semibold mb-3">크레딧 관리</h6>
+            <div class="mb-3 p-3 rounded" style="background:#f8f9fa;">
+                <div class="text-muted small">현재 잔액</div>
+                <div class="fs-4 fw-bold">
+                    {% if target_user.credit %}{{ target_user.credit.balance }}{% else %}0{% endif %}개
+                </div>
+            </div>
+            <form method="post" action="{% url 'dashboard:user_credit_grant' target_user.pk %}">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">크레딧 지급</label>
+                    <div class="input-group">
+                        <input type="number" name="amount" class="form-control"
+                               placeholder="지급할 크레딧 수" min="1">
+                        <button type="submit" class="btn btn-warning">지급</button>
+                    </div>
+                </div>
+                <div class="mb-0">
+                    <label class="form-label fw-semibold">메모</label>
+                    <input type="text" name="description" class="form-control"
+                           placeholder="지급 사유 (선택)">
+                </div>
+            </form>
+        </div>
+
+        <!-- 최근 거래내역 -->
+        <div class="stat-card">
+            <h6 class="fw-semibold mb-3">최근 크레딧 내역</h6>
+            {% if transactions %}
+            <table class="table table-sm mb-0">
+                <thead class="table-light">
+                    <tr><th>유형</th><th>수량</th><th>잔액</th><th>일시</th></tr>
+                </thead>
+                <tbody>
+                    {% for t in transactions %}
+                    <tr>
+                        <td>{{ t.get_transaction_type_display }}</td>
+                        <td>
+                            {% if t.amount > 0 %}
+                            <span class="text-success">+{{ t.amount }}</span>
+                            {% else %}
+                            <span class="text-danger">{{ t.amount }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ t.balance_after }}</td>
+                        <td class="text-muted small">{{ t.created_at|date:"m/d H:i" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="text-muted text-center py-2 mb-0 small">거래내역이 없습니다.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

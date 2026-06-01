@@ -1,0 +1,77 @@
+{% extends 'base/base.html' %}
+{% block title %}{{ content_type.name }} - 1post{% endblock %}
+{% block page_title %}{{ content_type.name }}{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+    <!-- 기본 정보 -->
+    <div class="col-12">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-semibold mb-0">기본 정보</h6>
+                <a href="{% url 'dashboard:content_type_edit' content_type.pk %}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-pencil"></i> 수정
+                </a>
+            </div>
+            <table class="table table-sm mb-0">
+                <tr><th class="text-muted" width="120">유형명</th><td>{{ content_type.name }}</td></tr>
+                <tr><th class="text-muted">설명</th><td>{{ content_type.description|default:"-" }}</td></tr>
+                <tr><th class="text-muted">상태</th>
+                    <td>{% if content_type.is_active %}<span class="badge bg-success">활성</span>{% else %}<span class="badge bg-secondary">비활성</span>{% endif %}</td>
+                </tr>
+                <tr><th class="text-muted">생성일</th><td>{{ content_type.created_at|date:"Y.m.d" }}</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- 채널 프롬프트 목록 -->
+    <div class="col-12">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-semibold mb-0">채널별 프롬프트</h6>
+                <a href="{% url 'dashboard:channel_prompt_create' content_type.pk %}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-plus-lg"></i> 채널 추가
+                </a>
+            </div>
+            {% if channel_prompts %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>채널</th>
+                            <th>옵션 그룹</th>
+                            <th>상태</th>
+                            <th>수정일</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cp in channel_prompts %}
+                        <tr>
+                            <td class="fw-semibold">{{ cp.channel.name }}</td>
+                            <td><span class="badge bg-secondary">{{ cp.option_groups.count }}개</span></td>
+                            <td>
+                                {% if cp.is_active %}<span class="badge bg-success">활성</span>
+                                {% else %}<span class="badge bg-secondary">비활성</span>{% endif %}
+                            </td>
+                            <td class="text-muted small">{{ cp.updated_at|date:"Y.m.d" }}</td>
+                            <td>
+                                <a href="{% url 'dashboard:channel_prompt_edit' cp.pk %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{% url 'dashboard:prompt_option_manage' cp.pk %}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-sliders"></i> 옵션
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted text-center py-3 mb-0">등록된 채널 프롬프트가 없습니다.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

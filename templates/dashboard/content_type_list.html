@@ -1,0 +1,68 @@
+{% extends 'base/base.html' %}
+{% block title %}콘텐츠 유형 - 1post{% endblock %}
+{% block page_title %}콘텐츠 유형 관리{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <span class="text-muted small">총 {{ content_types.count }}개</span>
+    <a href="{% url 'dashboard:content_type_create' %}" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-lg"></i> 새 유형 추가
+    </a>
+</div>
+
+<div class="stat-card">
+    {% if content_types %}
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>유형명</th>
+                    <th>설명</th>
+                    <th>채널 프롬프트</th>
+                    <th>상태</th>
+                    <th>생성일</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ct in content_types %}
+                <tr>
+                    <td class="fw-semibold">{{ ct.name }}</td>
+                    <td class="text-muted">{{ ct.description|truncatechars:40|default:"-" }}</td>
+                    <td>
+                        <span class="badge bg-secondary">{{ ct.channel_prompts.count }}개 채널</span>
+                    </td>
+                    <td>
+                        {% if ct.is_active %}
+                        <span class="badge bg-success">활성</span>
+                        {% else %}
+                        <span class="badge bg-secondary">비활성</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-muted small">{{ ct.created_at|date:"Y.m.d" }}</td>
+                    <td>
+                        <div class="d-flex gap-1">
+                            <a href="{% url 'dashboard:content_type_detail' ct.pk %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a href="{% url 'dashboard:content_type_delete' ct.pk %}" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="bi bi-grid-3x3-gap fs-1 text-muted"></i>
+        <p class="text-muted mt-2">등록된 콘텐츠 유형이 없습니다.</p>
+        <a href="{% url 'dashboard:content_type_create' %}" class="btn btn-primary btn-sm">
+            첫 유형 추가하기
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

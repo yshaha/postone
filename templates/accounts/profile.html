@@ -1,0 +1,15 @@
+{% extends 'base/base.html' %}
+{% block title %}내 정보 - 1post{% endblock %}
+{% block page_title %}내 정보{% endblock %}
+{% block content %}
+<div class="stat-card" style="max-width:500px;">
+    <h6 class="fw-semibold mb-3">계정 정보</h6>
+    <table class="table table-sm mb-0">
+        <tr><th class="text-muted" width="120">아이디</th><td>{{ user.username }}</td></tr>
+        <tr><th class="text-muted">이름</th><td>{{ user.get_full_name|default:"-" }}</td></tr>
+        <tr><th class="text-muted">이메일</th><td>{{ user.email|default:"-" }}</td></tr>
+        <tr><th class="text-muted">회사</th><td>{{ user.company|default:"-" }}</td></tr>
+        <tr><th class="text-muted">역할</th><td>{{ user.get_role_display }}</td></tr>
+    </table>
+</div>
+{% endblock %}

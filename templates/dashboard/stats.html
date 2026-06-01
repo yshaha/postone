@@ -1,0 +1,236 @@
+{% extends 'base/base.html' %}
+{% block title %}생성 통계 - 1post{% endblock %}
+{% block page_title %}생성 통계{% endblock %}
+
+{% block content %}
+<!-- 인사이트 요약 -->
+<div class="stat-card mb-4">
+    <div class="d-flex align-items-center gap-2 mb-2">
+        <i class="bi bi-lightbulb text-warning fs-5"></i>
+        <h6 class="fw-semibold mb-0">이번달 인사이트</h6>
+    </div>
+    <div class="row g-2">
+        {% if insight.top_channel %}
+        <div class="col-12 col-md-4">
+            <div class="p-3 rounded" style="background:#eef2ff;">
+                <div class="small text-muted">가장 많이 사용한 채널</div>
+                <div class="fw-semibold mt-1">
+                    <i class="bi bi-broadcast text-primary"></i>
+                    {{ insight.top_channel }}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% if insight.top_type %}
+        <div class="col-12 col-md-4">
+            <div class="p-3 rounded" style="background:#f0fdf4;">
+                <div class="small text-muted">가장 많이 사용한 유형</div>
+                <div class="fw-semibold mt-1">
+                    <i class="bi bi-grid-3x3-gap text-success"></i>
+                    {{ insight.top_type }}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        <div class="col-12 col-md-4">
+            <div class="p-3 rounded" style="background:#fff7ed;">
+                <div class="small text-muted">이번달 생성 / 전월 대비</div>
+                <div class="fw-semibold mt-1">
+                    <i class="bi bi-magic text-warning"></i>
+                    {{ stats.this_month }}건
+                    {% if insight.diff > 0 %}
+                    <span class="text-success small">▲ {{ insight.diff }}</span>
+                    {% elif insight.diff < 0 %}
+                    <span class="text-danger small">▼ {{ insight.diff|slice:"1:" }}</span>
+                    {% else %}
+                    <span class="text-muted small">— 동일</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 기간 선택 -->
+<div class="d-flex gap-2 mb-3">
+    <a href="?period=7" class="btn btn-sm {% if period == '7' %}btn-primary{% else %}btn-outline-secondary{% endif %}">7일</a>
+    <a href="?period=30" class="btn btn-sm {% if period == '30' %}btn-primary{% else %}btn-outline-secondary{% endif %}">30일</a>
+    <a href="?period=90" class="btn btn-sm {% if period == '90' %}btn-primary{% else %}btn-outline-secondary{% endif %}">90일</a>
+</div>
+
+<!-- 요약 카드 -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#eef2ff; color:#6366f1;">
+                <i class="bi bi-magic"></i>
+            </div>
+            <div class="stat-value">{{ stats.total }}</div>
+            <div class="stat-label">전체 생성</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#f0fdf4; color:#22c55e;">
+                <i class="bi bi-calendar-check"></i>
+            </div>
+            <div class="stat-value">{{ stats.period_count }}</div>
+            <div class="stat-label">선택 기간 생성</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#fff7ed; color:#f97316;">
+                <i class="bi bi-calendar-month"></i>
+            </div>
+            <div class="stat-value">{{ stats.this_month }}</div>
+            <div class="stat-label">이번달 생성</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#fdf4ff; color:#a855f7;">
+                <i class="bi bi-coin"></i>
+            </div>
+            <div class="stat-value">{{ stats.total_credits_used }}</div>
+            <div class="stat-label">총 사용 크레딧</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <!-- 추이 차트 -->
+    <div class="col-12">
+        <div class="stat-card">
+            <h6 class="fw-semibold mb-3">생성 추이</h6>
+            {% if daily_stats %}
+            <canvas id="dailyChart" height="70"></canvas>
+            {% else %}
+            <p class="text-muted text-center py-4 mb-0">데이터가 없습니다.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 채널별 -->
+    <div class="col-12 col-lg-6">
+        <div class="stat-card">
+            <h6 class="fw-semibold mb-3">채널별 생성 수</h6>
+            {% if channel_stats %}
+            <canvas id="channelChart" height="200"></canvas>
+            <table class="table table-sm mt-3 mb-0">
+                <tbody>
+                    {% for cs in channel_stats %}
+                    <tr>
+                        <td>{{ cs.channel__name }}</td>
+                        <td class="fw-semibold text-end">{{ cs.count }}건</td>
+                        <td style="width:120px;">
+                            <div class="progress" style="height:6px;">
+                                <div class="progress-bar bg-primary"
+                                     style="width:{% widthratio cs.count stats.total 100 %}%">
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="text-muted text-center py-4 mb-0">데이터가 없습니다.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 유형별 -->
+    <div class="col-12 col-lg-6">
+        <div class="stat-card">
+            <h6 class="fw-semibold mb-3">유형별 생성 수</h6>
+            {% if type_stats %}
+            <canvas id="typeChart" height="200"></canvas>
+            <table class="table table-sm mt-3 mb-0">
+                <tbody>
+                    {% for ts in type_stats %}
+                    <tr>
+                        <td>{{ ts.content_type__name }}</td>
+                        <td class="fw-semibold text-end">{{ ts.count }}건</td>
+                        <td style="width:120px;">
+                            <div class="progress" style="height:6px;">
+                                <div class="progress-bar bg-success"
+                                     style="width:{% widthratio ts.count stats.total 100 %}%">
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="text-muted text-center py-4 mb-0">데이터가 없습니다.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+{% if daily_stats %}
+new Chart(document.getElementById('dailyChart').getContext('2d'), {
+    type: 'line',
+    data: {
+        labels: [{% for d in daily_stats %}'{{ d.date }}',{% endfor %}],
+        datasets: [{
+            label: '생성 수',
+            data: [{% for d in daily_stats %}{{ d.count }},{% endfor %}],
+            borderColor: '#6366f1',
+            backgroundColor: 'rgba(99,102,241,0.1)',
+            fill: true,
+            tension: 0.4,
+            pointRadius: 4,
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+    }
+});
+{% endif %}
+
+{% if channel_stats %}
+new Chart(document.getElementById('channelChart').getContext('2d'), {
+    type: 'doughnut',
+    data: {
+        labels: [{% for cs in channel_stats %}'{{ cs.channel__name }}',{% endfor %}],
+        datasets: [{
+            data: [{% for cs in channel_stats %}{{ cs.count }},{% endfor %}],
+            backgroundColor: ['#6366f1','#22c55e','#f97316','#a855f7','#06b6d4'],
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { position: 'bottom' } }
+    }
+});
+{% endif %}
+
+{% if type_stats %}
+new Chart(document.getElementById('typeChart').getContext('2d'), {
+    type: 'bar',
+    data: {
+        labels: [{% for ts in type_stats %}'{{ ts.content_type__name }}',{% endfor %}],
+        datasets: [{
+            data: [{% for ts in type_stats %}{{ ts.count }},{% endfor %}],
+            backgroundColor: '#22c55e',
+            borderRadius: 6,
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+    }
+});
+{% endif %}
+</script>
+{% endblock %}

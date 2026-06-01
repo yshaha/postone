@@ -1,0 +1,119 @@
+{% extends 'base/base.html' %}
+{% block title %}대시보드 - 1post{% endblock %}
+{% block page_title %}대시보드{% endblock %}
+
+{% block content %}
+<!-- 통계 카드 -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#eef2ff; color:#6366f1;">
+                <i class="bi bi-magic"></i>
+            </div>
+            <div class="stat-value">{{ stats.total_requests }}</div>
+            <div class="stat-label">전체 생성 수</div>
+        </div>
+    </div>
+    <div class="col-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#f0fdf4; color:#22c55e;">
+                <i class="bi bi-calendar-check"></i>
+            </div>
+            <div class="stat-value">{{ stats.today_requests }}</div>
+            <div class="stat-label">오늘 생성 수</div>
+        </div>
+    </div>
+    <div class="col-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#fff7ed; color:#f97316;">
+                <i class="bi bi-coin"></i>
+            </div>
+            <div class="stat-value">{{ stats.my_credits }}</div>
+            <div class="stat-label">보유 크레딧</div>
+        </div>
+    </div>
+    <div class="col-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#fdf4ff; color:#a855f7;">
+                <i class="bi bi-people"></i>
+            </div>
+            <div class="stat-value">{{ stats.total_users }}</div>
+            <div class="stat-label">전체 회원 수</div>
+        </div>
+    </div>
+</div>
+
+<!-- 빠른 실행 -->
+<div class="row g-3 mb-4">
+    <div class="col-12">
+        <div class="stat-card">
+            <h6 class="fw-600 mb-3">빠른 실행</h6>
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{% url 'dashboard:generate' %}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-magic"></i> 콘텐츠 생성
+                </a>
+                <a href="{% url 'dashboard:history' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-clock-history"></i> 생성 이력
+                </a>
+                {% if user.is_admin %}
+                <a href="{% url 'dashboard:content_type_list' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-grid-3x3-gap"></i> 콘텐츠 유형 관리
+                </a>
+                <a href="{% url 'dashboard:user_list' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-people"></i> 회원 관리
+                </a>
+                {% endif %}
+                <a href="{% url 'dashboard:credit_charge' %}" class="btn btn-outline-warning btn-sm">
+                    <i class="bi bi-plus-circle"></i> 크레딧 충전
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 최근 생성 이력 -->
+<div class="row g-3">
+    <div class="col-12">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-semibold mb-0">최근 생성 이력</h6>
+                <a href="{% url 'dashboard:history' %}" class="btn btn-sm btn-outline-secondary">전체보기</a>
+            </div>
+            {% if recent_requests %}
+            <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>유형</th>
+                            <th>채널</th>
+                            <th>상태</th>
+                            <th>일시</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in recent_requests %}
+                        <tr>
+                            <td>{{ req.content_type.name }}</td>
+                            <td>{{ req.channel.name }}</td>
+                            <td>
+                                {% if req.status == 'done' %}
+                                <span class="badge bg-success">완료</span>
+                                {% elif req.status == 'pending' %}
+                                <span class="badge bg-warning">생성중</span>
+                                {% else %}
+                                <span class="badge bg-danger">실패</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-muted">{{ req.created_at|date:"m/d H:i" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted text-center py-3 mb-0">아직 생성 이력이 없습니다.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

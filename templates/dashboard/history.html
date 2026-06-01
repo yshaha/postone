@@ -1,0 +1,127 @@
+{% extends 'base/base.html' %}
+{% block title %}생성 이력 - 1post{% endblock %}
+{% block page_title %}생성 이력{% endblock %}
+
+{% block content %}
+<div class="stat-card">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <span class="text-muted small">총 {{ requests.count }}건</span>
+        <a href="{% url 'dashboard:generate' %}" class="btn btn-primary btn-sm">
+            <i class="bi bi-magic"></i> 새 콘텐츠 생성
+        </a>
+    </div>
+
+    {% if requests %}
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>유형</th>
+                    <th>채널</th>
+                    <th>소재 미리보기</th>
+                    <th>상태</th>
+                    <th>크레딧</th>
+                    <th>일시</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for req in requests %}
+                <tr style="cursor:pointer;" onclick="showDetail({{ req.pk }})">
+                    <td class="fw-semibold">{{ req.content_type.name }}</td>
+                    <td>{{ req.channel.name }}</td>
+                    <td class="text-muted small">{{ req.source_text|truncatechars:40 }}</td>
+                    <td>
+                        {% if req.status == 'done' %}
+                        <span class="badge bg-success">완료</span>
+                        {% elif req.status == 'pending' %}
+                        <span class="badge bg-warning">생성중</span>
+                        {% else %}
+                        <span class="badge bg-danger">실패</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-muted small">{{ req.credit_used }}개</td>
+                    <td class="text-muted small">{{ req.created_at|date:"m/d H:i" }}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-secondary"
+                                onclick="event.stopPropagation(); showDetail({{ req.pk }})">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="bi bi-clock-history fs-1 text-muted"></i>
+        <p class="text-muted mt-2">생성 이력이 없습니다.</p>
+        <a href="{% url 'dashboard:generate' %}" class="btn btn-primary btn-sm">
+            첫 콘텐츠 생성하기
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- 상세 모달 -->
+<div class="modal fade" id="detailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title fw-semibold">생성 결과 상세</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label small text-muted fw-semibold">입력 소재</label>
+                    <div id="modalSource" class="p-3 rounded small"
+                         style="background:#f8f9fa; white-space:pre-wrap;"></div>
+                </div>
+                <div>
+                    <label class="form-label small text-muted fw-semibold">생성 결과</label>
+                    <div id="modalResult" class="p-3 rounded small"
+                         style="background:#f8f9fa; white-space:pre-wrap;"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline-secondary btn-sm" onclick="copyModal()">
+                    <i class="bi bi-clipboard"></i> 결과 복사
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm"
+                        data-bs-dismiss="modal">닫기</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const requests = {
+    {% for req in requests %}
+    {{ req.pk }}: {
+        source: {{ req.source_text|escapejs|json_script:'' }},
+        result: {{ req.result_text|escapejs|json_script:'' }},
+    },
+    {% endfor %}
+};
+
+function showDetail(pk) {
+    fetch(`/api/request/${pk}/`)
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('modalSource').textContent = data.source_text;
+            document.getElementById('modalResult').textContent = data.result_text;
+            new bootstrap.Modal(document.getElementById('detailModal')).show();
+        });
+}
+
+function copyModal() {
+    const text = document.getElementById('modalResult').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+        alert('복사됐습니다.');
+    });
+}
+</script>
+{% endblock %}

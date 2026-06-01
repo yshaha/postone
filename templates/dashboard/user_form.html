@@ -1,0 +1,47 @@
+{% extends 'base/base.html' %}
+{% block title %}회원 추가 - 1post{% endblock %}
+{% block page_title %}회원 추가{% endblock %}
+
+{% block content %}
+<div class="stat-card" style="max-width:500px;">
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label fw-semibold">아이디 <span class="text-danger">*</span></label>
+            <input type="text" name="username" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label fw-semibold">비밀번호 <span class="text-danger">*</span></label>
+            <input type="password" name="password" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label fw-semibold">이름</label>
+            <input type="text" name="first_name" class="form-control">
+        </div>
+        <div class="mb-3">
+            <label class="form-label fw-semibold">이메일</label>
+            <input type="email" name="email" class="form-control">
+        </div>
+        <div class="mb-3">
+            <label class="form-label fw-semibold">회사</label>
+            <input type="text" name="company" class="form-control">
+        </div>
+        <div class="mb-3">
+            <label class="form-label fw-semibold">연락처</label>
+            <input type="text" name="phone" class="form-control">
+        </div>
+        <div class="mb-4">
+            <label class="form-label fw-semibold">역할</label>
+            <select name="role" class="form-select">
+                <option value="member">멤버</option>
+                <option value="admin">관리자</option>
+                <option value="master">마스터</option>
+            </select>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">저장</button>
+            <a href="{% url 'dashboard:user_list' %}" class="btn btn-outline-secondary">취소</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,79 @@
+{% extends 'base/base.html' %}
+{% block title %}크레딧 충전 - 1post{% endblock %}
+{% block page_title %}크레딧 충전{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+    <div class="col-12 col-lg-7">
+        <div class="stat-card">
+            <h6 class="fw-semibold mb-3">충전 패키지 선택</h6>
+            {% if packages %}
+            <div class="row g-3">
+                {% for pkg in packages %}
+                <div class="col-12 col-md-4">
+                    <div class="border rounded-3 p-3 text-center package-card"
+                         style="cursor:pointer; transition: all 0.15s;"
+                         onclick="selectPackage({{ pkg.pk }}, {{ pkg.price }}, {{ pkg.credits }})">
+                        <div class="fw-bold fs-5 mb-1">{{ pkg.credits }}개</div>
+                        <div class="text-primary fw-bold fs-4">{{ pkg.price|floatformat:0 }}원</div>
+                        <div class="text-muted small mt-1">건당 {{ pkg.price_per_credit }}원</div>
+                        <div class="text-muted small">{{ pkg.name }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted">등록된 패키지가 없습니다.</p>
+            {% endif %}
+
+            <hr class="my-4">
+
+            <form method="post" id="chargeForm">
+                {% csrf_token %}
+                <input type="hidden" name="package_id" id="selectedPackageId">
+                <div class="mb-3 p-3 rounded" style="background:#f8f9fa;">
+                    <div class="text-muted small">선택된 패키지</div>
+                    <div id="selectedInfo" class="fw-semibold mt-1">패키지를 선택하세요</div>
+                </div>
+                <button type="submit" class="btn btn-primary w-100" id="chargeBtn" disabled>
+                    결제하기
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-5">
+        <div class="stat-card">
+            <h6 class="fw-semibold mb-3">현재 잔액</h6>
+            <div class="text-center py-3">
+                <div class="fs-1 fw-bold text-primary">{{ balance }}</div>
+                <div class="text-muted">크레딧</div>
+            </div>
+            <hr>
+            <h6 class="fw-semibold mb-2 small text-muted">무료 크레딧 안내</h6>
+            <ul class="small text-muted ps-3 mb-0">
+                <li>멤버: 매월 5회 무료 제공</li>
+                <li>관리자/마스터: 무제한 무료</li>
+                <li>무료 크레딧은 매월 1일 초기화</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+function selectPackage(id, price, credits) {
+    document.getElementById('selectedPackageId').value = id;
+    document.getElementById('selectedInfo').textContent =
+        credits + '개 / ' + price.toLocaleString() + '원';
+    document.getElementById('chargeBtn').disabled = false;
+    document.querySelectorAll('.package-card').forEach(el => {
+        el.style.borderColor = '';
+        el.style.background = '';
+    });
+    event.currentTarget.style.borderColor = '#6366f1';
+    event.currentTarget.style.background = '#eef2ff';
+}
+</script>
+{% endblock %}
+{% endblock %}
