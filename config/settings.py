@@ -19,9 +19,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'social_django',
     'accounts',
-    'content',
-    'credits',
     'dashboard',
+    'content',
+    'credits',  
 ]
 
 MIDDLEWARE = [
@@ -91,7 +91,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'accounts.User'
 
 LOGIN_URL = '/accounts/login/'
-LOGIN_REDIRECT_URL = '/'
+LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 
 AUTHENTICATION_BACKENDS = [
