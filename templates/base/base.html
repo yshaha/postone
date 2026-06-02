@@ -244,12 +244,15 @@
                 <i class="bi bi-bar-chart"></i> 생성 통계
             </a>
         </div>
+        <!-- 공통 메뉴 -->
         <div class="sidebar-section">계정</div>
+        {% if not request.user.is_admin %}
         <div class="sidebar-item">
             <a href="{% url 'dashboard:credit_charge' %}">
                 <i class="bi bi-plus-circle"></i> 크레딧 충전
             </a>
         </div>
+        {% endif %}
         <div class="sidebar-item">
             <a href="{% url 'accounts:profile' %}">
                 <i class="bi bi-person"></i> 내 정보

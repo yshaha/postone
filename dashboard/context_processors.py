@@ -6,8 +6,11 @@ def user_menus(request):
         return {'user_menus': []}
     if request.user.role == 'master':
         return {'user_menus': []}
+    role = request.user.role
+    if role == 'free':
+        role = 'member'
     menus = MenuPermission.objects.filter(
-        role=request.user.role,
+        role=role,
         is_visible=True
     )
     return {'user_menus': menus}

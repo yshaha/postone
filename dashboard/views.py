@@ -225,6 +225,9 @@ def user_create(request):
         username = request.POST.get('username', '').strip()
         password = request.POST.get('password', '').strip()
         if username and password:
+            if User.objects.filter(username=username).exists():
+                messages.error(request, f'"{username}" 아이디가 이미 존재합니다.')
+                return render(request, 'dashboard/user_form.html', {'title': '회원 추가'})
             user = User.objects.create_user(
                 username=username,
                 password=password,
@@ -232,7 +235,8 @@ def user_create(request):
                 first_name=request.POST.get('first_name', ''),
                 company=request.POST.get('company', ''),
                 phone=request.POST.get('phone', ''),
-                role=request.POST.get('role', 'member'),
+                role=request.POST.get('role', 'free'),
+                plan=request.POST.get('plan', 'free'),
             )
             UserCredit.objects.create(user=user, balance=0)
             messages.success(request, f'"{username}" 회원이 추가됐습니다.')

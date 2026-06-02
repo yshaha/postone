@@ -106,9 +106,17 @@
                         보유 크레딧:
                         <strong>{% if request.user.credit %}{{ request.user.credit.balance }}{% else %}0{% endif %}개</strong>
                     </div>
-                    <div class="small text-muted">생성 시 1크레딧 차감</div>
+                    <div class="small text-muted">
+                        {% if request.user.is_admin %}
+                        <span class="text-success">무제한 무료</span>
+                        {% elif request.user.role == 'free' %}
+                        이번달 무료:
+                        <strong>{% if request.user.credit %}{{ request.user.credit.free_used_this_month }}{% else %}0{% endif %}/5회</strong>
+                        {% else %}
+                        1채널 1크레딧 / 2채널 이상 2크레딧
+                        {% endif %}
+                    </div>
                 </div>
-
                 <button type="submit" class="btn btn-primary w-100" id="generateBtn">
                     <i class="bi bi-magic"></i> 콘텐츠 생성
                 </button>
