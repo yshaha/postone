@@ -1,5 +1,5 @@
 {% extends 'base/base.html' %}
-{% block title %}생성 이력 - 1post{% endblock %}
+{% block title %}생성 이력 - postone{% endblock %}
 {% block page_title %}생성 이력{% endblock %}
 
 {% block content %}
@@ -27,7 +27,7 @@
             </thead>
             <tbody>
                 {% for req in requests %}
-                <tr style="cursor:pointer;" onclick="showDetail({{ req.pk }})">
+                <tr>
                     <td class="fw-semibold">{{ req.content_type.name }}</td>
                     <td>{{ req.channel.name }}</td>
                     <td class="text-muted small">{{ req.source_text|truncatechars:40 }}</td>
@@ -44,7 +44,7 @@
                     <td class="text-muted small">{{ req.created_at|date:"m/d H:i" }}</td>
                     <td>
                         <button class="btn btn-sm btn-outline-secondary"
-                                onclick="event.stopPropagation(); showDetail({{ req.pk }})">
+                                onclick="openRequestDetail({{ req.pk }})">
                             <i class="bi bi-eye"></i>
                         </button>
                     </td>
@@ -63,64 +63,55 @@
     </div>
     {% endif %}
 </div>
-
-<!-- 상세 모달 -->
-<div class="modal fade" id="detailModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h6 class="modal-title fw-semibold">생성 결과 상세</h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label small text-muted fw-semibold">입력 소재</label>
-                    <div id="modalSource" class="p-3 rounded small"
-                         style="background:#f8f9fa; white-space:pre-wrap;"></div>
-                </div>
-                <div>
-                    <label class="form-label small text-muted fw-semibold">생성 결과</label>
-                    <div id="modalResult" class="p-3 rounded small"
-                         style="background:#f8f9fa; white-space:pre-wrap;"></div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-outline-secondary btn-sm" onclick="copyModal()">
-                    <i class="bi bi-clipboard"></i> 결과 복사
-                </button>
-                <button type="button" class="btn btn-secondary btn-sm"
-                        data-bs-dismiss="modal">닫기</button>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-const requests = {
-    {% for req in requests %}
-    {{ req.pk }}: {
-        source: {{ req.source_text|escapejs|json_script:'' }},
-        result: {{ req.result_text|escapejs|json_script:'' }},
-    },
-    {% endfor %}
-};
-
-function showDetail(pk) {
+function openRequestDetail(pk) {
+    document.getElementById('slidebarFooter').style.display = 'none';
     fetch(`/api/request/${pk}/`)
         .then(r => r.json())
         .then(data => {
-            document.getElementById('modalSource').textContent = data.source_text;
-            document.getElementById('modalResult').textContent = data.result_text;
-            new bootstrap.Modal(document.getElementById('detailModal')).show();
+            let imageHtml = '';
+            if (data.image_url) {
+                imageHtml = `
+                <div class="mb-3">
+                    <div class="text-muted small fw-semibold mb-1">이미지</div>
+                    <img src="${data.image_url}"
+                         style="width:100%; border-radius:8px; border:1px solid #dee2e6;">
+                    <a href="${data.image_url}" download
+                       class="btn btn-sm btn-outline-secondary mt-1 w-100">
+                        <i class="bi bi-download"></i> 다운로드
+                    </a>
+                </div>`;
+            }
+            const body = `
+            ${imageHtml}
+            <div class="mb-3">
+                <div class="text-muted small fw-semibold mb-1">입력 소재</div>
+                <div class="p-3 rounded small" style="background:#f8f9fa; white-space:pre-wrap;">${data.source_text}</div>
+            </div>
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <div class="text-muted small fw-semibold">생성 결과</div>
+                    <button class="btn btn-sm btn-outline-primary"
+                            onclick="copyToClipboard('resultTextSlide')">
+                        <i class="bi bi-clipboard"></i> 복사
+                    </button>
+                </div>
+                <pre id="resultTextSlide"
+                     style="white-space:pre-wrap; font-family:inherit; font-size:13px;
+                            background:#f8f9fa; border-radius:8px; padding:12px;">${data.result_text}</pre>
+            </div>`;
+            openSlidebar('생성 결과 상세', body, null);
+            document.getElementById('slidebarFooter').style.display = 'none';
         });
 }
 
-function copyModal() {
-    const text = document.getElementById('modalResult').textContent;
+function copyToClipboard(id) {
+    const text = document.getElementById(id).textContent;
     navigator.clipboard.writeText(text).then(() => {
-        alert('복사됐습니다.');
+        alert('복사됐습니다!');
     });
 }
 </script>

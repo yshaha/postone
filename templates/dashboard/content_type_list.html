@@ -1,13 +1,13 @@
 {% extends 'base/base.html' %}
-{% block title %}콘텐츠 유형 - 1post{% endblock %}
+{% block title %}콘텐츠 유형 - postone{% endblock %}
 {% block page_title %}콘텐츠 유형 관리{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
     <span class="text-muted small">총 {{ content_types.count }}개</span>
-    <a href="{% url 'dashboard:content_type_create' %}" class="btn btn-primary btn-sm">
+    <button class="btn btn-primary btn-sm" onclick="openContentTypeCreate()">
         <i class="bi bi-plus-lg"></i> 새 유형 추가
-    </a>
+    </button>
 </div>
 
 <div class="stat-card">
@@ -42,10 +42,16 @@
                     <td class="text-muted small">{{ ct.created_at|date:"Y.m.d" }}</td>
                     <td>
                         <div class="d-flex gap-1">
-                            <a href="{% url 'dashboard:content_type_detail' ct.pk %}" class="btn btn-sm btn-outline-primary">
-                                <i class="bi bi-pencil"></i>
+                            <a href="{% url 'dashboard:content_type_detail' ct.pk %}"
+                               class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-eye"></i>
                             </a>
-                            <a href="{% url 'dashboard:content_type_delete' ct.pk %}" class="btn btn-sm btn-outline-danger">
+                            <button class="btn btn-sm btn-outline-primary"
+                                    onclick="openContentTypeEdit({{ ct.pk }}, '{{ ct.name }}', '{{ ct.description|escapejs }}', {{ ct.is_active|lower }})">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <a href="{% url 'dashboard:content_type_delete' ct.pk %}"
+                               class="btn btn-sm btn-outline-danger">
                                 <i class="bi bi-trash"></i>
                             </a>
                         </div>
@@ -59,10 +65,84 @@
     <div class="text-center py-5">
         <i class="bi bi-grid-3x3-gap fs-1 text-muted"></i>
         <p class="text-muted mt-2">등록된 콘텐츠 유형이 없습니다.</p>
-        <a href="{% url 'dashboard:content_type_create' %}" class="btn btn-primary btn-sm">
+        <button class="btn btn-primary btn-sm" onclick="openContentTypeCreate()">
             첫 유형 추가하기
-        </a>
+        </button>
     </div>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function contentTypeFormHtml(data) {
+    return `
+    <div class="mb-3">
+        <label class="form-label fw-semibold">유형명 <span class="text-danger">*</span></label>
+        <input type="text" id="ctName" class="form-control"
+               value="${data.name || ''}"
+               placeholder="예: 맛집 소개, 신제품 홍보">
+    </div>
+    <div class="mb-3">
+        <label class="form-label fw-semibold">설명</label>
+        <textarea id="ctDesc" class="form-control" rows="3"
+                  placeholder="이 유형에 대한 간단한 설명">${data.description || ''}</textarea>
+    </div>
+    <div class="form-check">
+        <input type="checkbox" id="ctActive" class="form-check-input"
+               ${data.is_active !== false ? 'checked' : ''}>
+        <label class="form-check-label" for="ctActive">활성화</label>
+    </div>`;
+}
+
+function openContentTypeCreate() {
+    openSlidebar('새 콘텐츠 유형 추가', contentTypeFormHtml({}), function() {
+        const data = {
+            name: document.getElementById('ctName').value.trim(),
+            description: document.getElementById('ctDesc').value.trim(),
+            is_active: document.getElementById('ctActive').checked,
+        };
+        if (!data.name) { alert('유형명을 입력해 주세요.'); return; }
+        fetch('/api/content-type/create/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: JSON.stringify(data)
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) { closeSlidebar(); location.reload(); }
+            else alert(d.error || '저장 중 오류가 발생했습니다.');
+        });
+    });
+}
+
+function openContentTypeEdit(pk, name, description, isActive) {
+    openSlidebar('콘텐츠 유형 수정', contentTypeFormHtml({
+        name, description, is_active: isActive
+    }), function() {
+        const data = {
+            name: document.getElementById('ctName').value.trim(),
+            description: document.getElementById('ctDesc').value.trim(),
+            is_active: document.getElementById('ctActive').checked,
+        };
+        if (!data.name) { alert('유형명을 입력해 주세요.'); return; }
+        fetch(`/api/content-type/${pk}/edit/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: JSON.stringify(data)
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) { closeSlidebar(); location.reload(); }
+            else alert(d.error || '저장 중 오류가 발생했습니다.');
+        });
+    });
+}
+</script>
 {% endblock %}

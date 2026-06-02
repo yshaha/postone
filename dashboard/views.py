@@ -7,6 +7,13 @@ from content.models import ContentRequest, ContentType, Channel, ChannelPrompt
 from credits.models import UserCredit, CreditTransaction, CreditPackage
 
 
+def get_user_menus(user):
+    from accounts.models import MenuPermission
+    if user.role in ['master']:
+        return []
+    return MenuPermission.objects.filter(role=user.role, is_visible=True)
+
+
 @login_required
 def index(request):
     today = timezone.now().date()
@@ -348,6 +355,12 @@ def history(request):
     return render(request, 'dashboard/history.html', {'requests': requests})
 
 
+@login_required
+def request_detail(request, pk):
+    req = get_object_or_404(ContentRequest, pk=pk, user=request.user)
+    return render(request, 'dashboard/request_detail.html', {'req': req})
+
+
 # 통계
 @login_required
 def stats(request):
@@ -414,6 +427,28 @@ def stats(request):
 
 
 # 프롬프트 옵션
+@login_required
+def menu_permission(request):
+    from accounts.models import MenuPermission
+    admin_menus = MenuPermission.objects.filter(role='admin')
+    member_menus = MenuPermission.objects.filter(role='member')
+    return render(request, 'dashboard/menu_permission.html', {
+        'admin_menus': admin_menus,
+        'member_menus': member_menus,
+    })
+
+
+@login_required
+def prompt_list(request):
+    content_types = ContentType.objects.prefetch_related(
+        'channel_prompts__channel',
+        'channel_prompts__option_groups'
+    ).all()
+    return render(request, 'dashboard/prompt_list.html', {
+        'content_types': content_types,
+    })
+
+
 @login_required
 def prompt_option_manage(request, channel_prompt_pk):
     from content.models import PromptOptionGroup

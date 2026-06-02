@@ -1,5 +1,5 @@
 {% extends 'base/base.html' %}
-{% block title %}콘텐츠 생성 - 1post{% endblock %}
+{% block title %}콘텐츠 생성 - postone{% endblock %}
 {% block page_title %}콘텐츠 생성{% endblock %}
 
 {% block content %}
@@ -7,7 +7,7 @@
     <!-- 입력 영역 -->
     <div class="col-12 col-lg-7">
         <div class="stat-card">
-            <form method="post" id="generateForm">
+            <form method="post" id="generateForm" enctype="multipart/form-data">
                 {% csrf_token %}
 
                 <!-- 콘텐츠 유형 선택 -->
@@ -37,13 +37,65 @@
                     <div id="optionGroups"></div>
                 </div>
 
-                <!-- 소재 입력 -->
+                <!-- 소재 입력 탭 -->
                 <div class="mb-3">
                     <label class="form-label fw-semibold">소재 입력 <span class="text-danger">*</span></label>
-                    <textarea name="source_text" class="form-control" rows="8" required
-                              placeholder="생성할 콘텐츠의 소재를 입력하세요.
+                    <ul class="nav nav-tabs mb-2" id="inputTabs">
+                        <li class="nav-item">
+                            <button type="button" class="nav-link active"
+                                    onclick="switchInputTab(this, 'tab-text')">
+                                <i class="bi bi-pencil"></i> 직접 입력
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button type="button" class="nav-link"
+                                    onclick="switchInputTab(this, 'tab-file')">
+                                <i class="bi bi-file-earmark"></i> 파일 업로드
+                            </button>
+                        </li>
+                    </ul>
+
+                    <!-- 직접 입력 -->
+                    <div id="tab-text">
+                        <textarea name="source_text" id="sourceText" class="form-control" rows="8"
+                                  placeholder="생성할 콘텐츠의 소재를 입력하세요.
 예) 오늘 방문한 맛집 정보, 신제품 출시 내용, 이벤트 안내 등"></textarea>
-                    <div class="form-text">상세하게 입력할수록 더 좋은 결과가 나옵니다.</div>
+                        <div class="form-text">상세하게 입력할수록 더 좋은 결과가 나옵니다.</div>
+                    </div>
+
+                    <!-- 파일 업로드 -->
+                    <div id="tab-file" style="display:none;">
+                        <div class="border rounded-3 p-4 text-center"
+                             style="background:#f8f9fa; cursor:pointer;"
+                             onclick="document.getElementById('sourceFile').click()">
+                            <i class="bi bi-file-earmark-arrow-up fs-2 text-muted"></i>
+                            <p class="text-muted small mt-2 mb-0">
+                                PDF, DOCX, TXT 파일을 업로드하세요<br>
+                                <span class="text-primary" id="fileNameDisplay">파일 선택</span>
+                            </p>
+                        </div>
+                        <input type="file" id="sourceFile" name="source_file"
+                               accept=".pdf,.docx,.txt" style="display:none;"
+                               onchange="showFileName(this)">
+                    </div>
+                </div>
+
+                <!-- 이미지 업로드 (선택) -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">
+                        이미지 업로드
+                        <span class="text-muted fw-normal small">(선택 — 없으면 텍스트 카드 자동생성)</span>
+                    </label>
+                    <div class="border rounded-3 p-3 text-center"
+                         style="background:#f8f9fa; cursor:pointer;"
+                         onclick="document.getElementById('imageFiles').click()">
+                        <i class="bi bi-images text-muted"></i>
+                        <span class="text-muted small ms-2" id="imageNameDisplay">이미지 선택 (복수 선택 가능)</span>
+                    </div>
+                    <input type="file" id="imageFiles" name="image_files"
+                           accept="image/*" multiple style="display:none;"
+                           onchange="showImageNames(this)">
+                    <div id="imagePreview" class="d-flex flex-wrap gap-2 mt-2"></div>
                 </div>
 
                 <!-- 크레딧 안내 -->
@@ -54,9 +106,7 @@
                         보유 크레딧:
                         <strong>{% if request.user.credit %}{{ request.user.credit.balance }}{% else %}0{% endif %}개</strong>
                     </div>
-                    <div class="small text-muted">
-                        생성 시 1크레딧 차감
-                    </div>
+                    <div class="small text-muted">생성 시 1크레딧 차감</div>
                 </div>
 
                 <button type="submit" class="btn btn-primary w-100" id="generateBtn">
@@ -88,10 +138,15 @@
                     </div>
                 </div>
                 <div id="resultContent" style="display:none;">
+                    <!-- 이미지 결과 -->
+                    <div id="resultImages" class="mb-3"></div>
+                    <!-- 텍스트 결과 -->
                     <pre id="resultText"
                          style="white-space:pre-wrap; font-family:inherit; font-size:13.5px;
                                 background:#f8f9fa; border-radius:8px; padding:16px;
-                                max-height:500px; overflow-y:auto;"></pre>
+                                max-height:400px; overflow-y:auto;"></pre>
+                    <!-- 이력 링크 -->
+                    <div id="resultLink" class="mt-2 text-end"></div>
                 </div>
             </div>
         </div>
@@ -101,6 +156,42 @@
 
 {% block extra_js %}
 <script>
+// 입력 탭 전환
+function switchInputTab(btn, tabId) {
+    document.querySelectorAll('#inputTabs .nav-link').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    ['tab-text', 'tab-file'].forEach(id => {
+        document.getElementById(id).style.display = id === tabId ? '' : 'none';
+    });
+}
+
+// 파일명 표시
+function showFileName(input) {
+    if (input.files.length > 0) {
+        document.getElementById('fileNameDisplay').textContent = input.files[0].name;
+    }
+}
+
+// 이미지 미리보기
+function showImageNames(input) {
+    const preview = document.getElementById('imagePreview');
+    const display = document.getElementById('imageNameDisplay');
+    preview.innerHTML = '';
+    if (input.files.length > 0) {
+        display.textContent = `${input.files.length}개 선택됨`;
+        Array.from(input.files).slice(0, 5).forEach(file => {
+            const reader = new FileReader();
+            reader.onload = e => {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.style.cssText = 'width:60px;height:60px;object-fit:cover;border-radius:6px;border:1px solid #dee2e6;';
+                preview.appendChild(img);
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+}
+
 // 채널 목록 로드
 function loadChannels(contentTypeId) {
     const channelSelect = document.getElementById('channelSelect');
@@ -117,8 +208,7 @@ function loadChannels(contentTypeId) {
         .then(data => {
             channelSelect.innerHTML = '<option value="">채널을 선택하세요</option>';
             data.channels.forEach(ch => {
-                channelSelect.innerHTML +=
-                    `<option value="${ch.id}">${ch.name}</option>`;
+                channelSelect.innerHTML += `<option value="${ch.id}">${ch.name}</option>`;
             });
         });
 }
@@ -140,16 +230,14 @@ function loadOptions(channelId) {
             if (data.groups && data.groups.length > 0) {
                 optionGroups.innerHTML = '';
                 data.groups.forEach(group => {
-                    let html = `<div class="mb-3">
+                    let html = `<div class="mb-2">
                         <label class="form-label small fw-semibold">${group.label}</label>
                         <div class="d-flex flex-wrap gap-2">`;
-                    group.options.forEach((opt, i) => {
+                    group.options.forEach(opt => {
                         html += `<div class="form-check form-check-inline">
                             <input class="form-check-input" type="radio"
-                                   name="option_${group.id}"
-                                   value="${opt.id}"
-                                   id="opt_${opt.id}"
-                                   ${opt.is_default ? 'checked' : ''}>
+                                   name="option_${group.id}" value="${opt.id}"
+                                   id="opt_${opt.id}" ${opt.is_default ? 'checked' : ''}>
                             <label class="form-check-label small" for="opt_${opt.id}">
                                 ${opt.label}
                             </label>
@@ -182,14 +270,47 @@ document.getElementById('generateForm').addEventListener('submit', function(e) {
     fetch('/api/generate/', {
         method: 'POST',
         body: formData,
-        headers: {'X-CSRFToken': formData.get('csrfmiddlewaretoken'}
+        headers: {'X-CSRFToken': formData.get('csrfmiddlewaretoken')}
     })
     .then(r => r.json())
     .then(data => {
         document.getElementById('loadingResult').style.display = 'none';
         document.getElementById('resultContent').style.display = 'block';
+
+        if (data.error) {
+            document.getElementById('resultText').textContent = data.error;
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-magic"></i> 콘텐츠 생성';
+            return;
+        }
+
+        // 이미지 결과
+        const imgArea = document.getElementById('resultImages');
+        imgArea.innerHTML = '';
+        if (data.image_url) {
+            imgArea.innerHTML = `
+                <div class="mb-2">
+                    <img src="${data.image_url}"
+                         style="width:100%; border-radius:8px; border:1px solid #dee2e6;">
+                    <a href="${data.image_url}" download
+                       class="btn btn-sm btn-outline-secondary mt-1 w-100">
+                        <i class="bi bi-download"></i> 이미지 다운로드
+                    </a>
+                </div>`;
+        }
+
+        // 텍스트 결과
         document.getElementById('resultText').textContent = data.result;
         document.getElementById('copyBtn').style.display = 'block';
+
+        // 이력 링크
+        if (data.request_id) {
+            document.getElementById('resultLink').innerHTML =
+                `<a href="/history/" class="small text-muted">
+                    <i class="bi bi-clock-history"></i> 이력에서 상세보기
+                </a>`;
+        }
+
         btn.disabled = false;
         btn.innerHTML = '<i class="bi bi-magic"></i> 콘텐츠 생성';
     })

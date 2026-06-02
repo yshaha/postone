@@ -104,6 +104,9 @@ class ContentRequest(models.Model):
     result_text = models.TextField(blank=True, verbose_name='생성 결과')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     credit_used = models.IntegerField(default=1, verbose_name='사용 크레딧')
+    thumbnail = models.ImageField(upload_to='content/thumbnails/', blank=True, null=True)
+    extra_images = models.JSONField(default=list, blank=True)
+    text_card = models.ImageField(upload_to='content/cards/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

@@ -3,9 +3,19 @@ from accounts.models import User
 
 
 class CreditPackage(models.Model):
+    PLAN_CHOICES = [
+        ('free', '무료'),
+        ('starter', '스타터'),
+        ('pro', '프로'),
+        ('business', '비즈니스'),
+    ]
+
     name = models.CharField(max_length=50, verbose_name='패키지명')
+    plan = models.CharField(max_length=20, choices=PLAN_CHOICES, default='starter')
     credits = models.IntegerField(verbose_name='크레딧 수')
     price = models.IntegerField(verbose_name='가격(원)')
+    is_auto_publish = models.BooleanField(default=False, verbose_name='자동발행 가능')
+    is_analytics = models.BooleanField(default=False, verbose_name='분석데이터 가능')
     is_active = models.BooleanField(default=True)
     order = models.IntegerField(default=0)
 

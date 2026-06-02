@@ -1,13 +1,13 @@
 {% extends 'base/base.html' %}
-{% block title %}채널 관리 - 1post{% endblock %}
+{% block title %}채널 관리 - postone{% endblock %}
 {% block page_title %}채널 관리{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
     <span class="text-muted small">총 {{ channels.count }}개</span>
-    <a href="{% url 'dashboard:channel_create' %}" class="btn btn-primary btn-sm">
+    <button class="btn btn-primary btn-sm" onclick="openChannelCreate()">
         <i class="bi bi-plus-lg"></i> 채널 추가
-    </a>
+    </button>
 </div>
 
 <div class="stat-card">
@@ -54,10 +54,12 @@
                     <td class="text-muted">{{ ch.order }}</td>
                     <td>
                         <div class="d-flex gap-1">
-                            <a href="{% url 'dashboard:channel_edit' ch.pk %}" class="btn btn-sm btn-outline-primary">
+                            <button class="btn btn-sm btn-outline-primary"
+                                    onclick="openChannelEdit({{ ch.pk }}, '{{ ch.name }}', '{{ ch.slug }}', '{{ ch.channel_type }}', '{{ ch.description }}', {{ ch.order }}, {{ ch.is_auto_publish|lower }}, {{ ch.is_active|lower }})">
                                 <i class="bi bi-pencil"></i>
-                            </a>
-                            <a href="{% url 'dashboard:channel_delete' ch.pk %}" class="btn btn-sm btn-outline-danger">
+                            </button>
+                            <a href="{% url 'dashboard:channel_delete' ch.pk %}"
+                               class="btn btn-sm btn-outline-danger">
                                 <i class="bi bi-trash"></i>
                             </a>
                         </div>
@@ -71,10 +73,116 @@
     <div class="text-center py-5">
         <i class="bi bi-broadcast fs-1 text-muted"></i>
         <p class="text-muted mt-2">등록된 채널이 없습니다.</p>
-        <a href="{% url 'dashboard:channel_create' %}" class="btn btn-primary btn-sm">
+        <button class="btn btn-primary btn-sm" onclick="openChannelCreate()">
             첫 채널 추가하기
-        </a>
+        </button>
     </div>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function channelFormHtml(data) {
+    return `
+    <div class="mb-3">
+        <label class="form-label fw-semibold">채널명 <span class="text-danger">*</span></label>
+        <input type="text" id="chName" class="form-control"
+               value="${data.name || ''}" placeholder="예: 인스타그램, 유튜브 쇼츠">
+    </div>
+    <div class="mb-3">
+        <label class="form-label fw-semibold">슬러그 <span class="text-danger">*</span></label>
+        <input type="text" id="chSlug" class="form-control"
+               value="${data.slug || ''}" placeholder="예: instagram, youtube-shorts">
+        <div class="form-text">영문 소문자, 숫자, 하이픈만 사용</div>
+    </div>
+    <div class="mb-3">
+        <label class="form-label fw-semibold">채널 유형 <span class="text-danger">*</span></label>
+        <select id="chType" class="form-select">
+            <option value="text" ${data.channel_type === 'text' ? 'selected' : ''}>텍스트</option>
+            <option value="video" ${data.channel_type === 'video' ? 'selected' : ''}>영상 자막</option>
+            <option value="image" ${data.channel_type === 'image' ? 'selected' : ''}>이미지 카드</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label class="form-label fw-semibold">설명</label>
+        <textarea id="chDesc" class="form-control" rows="2"
+                  placeholder="채널에 대한 간단한 설명">${data.description || ''}</textarea>
+    </div>
+    <div class="mb-3">
+        <label class="form-label fw-semibold">정렬 순서</label>
+        <input type="number" id="chOrder" class="form-control"
+               value="${data.order || 0}" min="0">
+    </div>
+    <div class="d-flex gap-4">
+        <div class="form-check">
+            <input type="checkbox" id="chAutoPublish" class="form-check-input"
+                   ${data.is_auto_publish ? 'checked' : ''}>
+            <label class="form-check-label" for="chAutoPublish">자동발행 가능</label>
+        </div>
+        <div class="form-check">
+            <input type="checkbox" id="chActive" class="form-check-input"
+                   ${data.is_active !== false ? 'checked' : ''}>
+            <label class="form-check-label" for="chActive">활성화</label>
+        </div>
+    </div>`;
+}
+
+function openChannelCreate() {
+    openSlidebar('채널 추가', channelFormHtml({}), function() {
+        const data = {
+            name: document.getElementById('chName').value.trim(),
+            slug: document.getElementById('chSlug').value.trim(),
+            channel_type: document.getElementById('chType').value,
+            description: document.getElementById('chDesc').value.trim(),
+            order: document.getElementById('chOrder').value,
+            is_auto_publish: document.getElementById('chAutoPublish').checked,
+            is_active: document.getElementById('chActive').checked,
+        };
+        fetch('/api/channel/create/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: JSON.stringify(data)
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) { closeSlidebar(); location.reload(); }
+            else alert(d.error || '저장 중 오류가 발생했습니다.');
+        });
+    });
+}
+
+function openChannelEdit(pk, name, slug, type, desc, order, autoPublish, active) {
+    openSlidebar('채널 수정', channelFormHtml({
+        name, slug, channel_type: type,
+        description: desc, order, is_auto_publish: autoPublish, is_active: active
+    }), function() {
+        const data = {
+            name: document.getElementById('chName').value.trim(),
+            slug: document.getElementById('chSlug').value.trim(),
+            channel_type: document.getElementById('chType').value,
+            description: document.getElementById('chDesc').value.trim(),
+            order: document.getElementById('chOrder').value,
+            is_auto_publish: document.getElementById('chAutoPublish').checked,
+            is_active: document.getElementById('chActive').checked,
+        };
+        fetch(`/api/channel/${pk}/edit/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: JSON.stringify(data)
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) { closeSlidebar(); location.reload(); }
+            else alert(d.error || '저장 중 오류가 발생했습니다.');
+        });
+    });
+}
+</script>
 {% endblock %}

@@ -38,7 +38,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV="C:\Users\fstyl\Desktop\개발\postone\postone_20260531\venv"
+VIRTUAL_ENV="C:\dev\postone\postone\venv"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"

@@ -1,5 +1,5 @@
 {% extends 'base/base.html' %}
-{% block title %}옵션 관리 - 1post{% endblock %}
+{% block title %}옵션 관리 - postone{% endblock %}
 {% block page_title %}톤/스타일 옵션 관리{% endblock %}
 
 {% block content %}
@@ -9,29 +9,10 @@
         <div class="stat-card">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h6 class="fw-semibold mb-0">옵션 그룹</h6>
-                <button class="btn btn-sm btn-primary" onclick="showGroupForm()">
+                <button class="btn btn-sm btn-primary"
+                        onclick="openGroupCreate()">
                     <i class="bi bi-plus-lg"></i> 그룹 추가
                 </button>
-            </div>
-
-            <!-- 그룹 추가 폼 -->
-            <div id="groupForm" style="display:none;" class="mb-3 p-3 rounded" style="background:#f8f9fa;">
-                <form method="post" action="{% url 'dashboard:option_group_create' channel_prompt.pk %}">
-                    {% csrf_token %}
-                    <div class="mb-2">
-                        <input type="text" name="label" class="form-control form-control-sm"
-                               placeholder="그룹 표시명 (예: 톤, 길이, 해시태그)" required>
-                    </div>
-                    <div class="mb-2">
-                        <input type="text" name="name" class="form-control form-control-sm"
-                               placeholder="그룹 키 (예: tone, length)" required>
-                    </div>
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-sm btn-primary">추가</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary"
-                                onclick="hideGroupForm()">취소</button>
-                    </div>
-                </form>
             </div>
 
             {% if option_groups %}
@@ -71,49 +52,10 @@
         <div class="stat-card">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h6 class="fw-semibold mb-0">{{ selected_group.label }} 옵션</h6>
-                <button class="btn btn-sm btn-primary" onclick="showOptionForm()">
+                <button class="btn btn-sm btn-primary"
+                        onclick="openOptionCreate()">
                     <i class="bi bi-plus-lg"></i> 옵션 추가
                 </button>
-            </div>
-
-            <!-- 옵션 추가 폼 -->
-            <div id="optionForm" style="display:none;" class="mb-3 p-3 rounded border">
-                <form method="post" action="{% url 'dashboard:option_create' selected_group.pk %}">
-                    {% csrf_token %}
-                    <div class="mb-2">
-                        <label class="form-label small fw-semibold">옵션명</label>
-                        <input type="text" name="label" id="optionLabel"
-                               class="form-control form-control-sm"
-                               placeholder="예: 친근하게, 전문적으로" required>
-                    </div>
-                    <div class="mb-2">
-                        <label class="form-label small fw-semibold">
-                            프롬프트 Snippet
-                            <button type="button" class="btn btn-xs btn-outline-primary ms-2"
-                                    style="font-size:11px; padding:1px 8px;"
-                                    onclick="generateSnippet()">
-                                <i class="bi bi-magic"></i> Claude 자동생성
-                            </button>
-                        </label>
-                        <textarea name="snippet" id="snippetText"
-                                  class="form-control form-control-sm" rows="4"
-                                  placeholder="Claude에게 전달할 프롬프트 조각" required></textarea>
-                        <div id="snippetLoading" style="display:none;" class="small text-muted mt-1">
-                            <span class="spinner-border spinner-border-sm"></span> 생성 중...
-                        </div>
-                    </div>
-                    <div class="mb-2">
-                        <div class="form-check">
-                            <input type="checkbox" name="is_default" class="form-check-input" id="isDefault">
-                            <label class="form-check-label small" for="isDefault">기본 선택</label>
-                        </div>
-                    </div>
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-sm btn-primary">저장</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary"
-                                onclick="hideOptionForm()">취소</button>
-                    </div>
-                </form>
             </div>
 
             {% if selected_group.options.all %}
@@ -129,7 +71,9 @@
                                 {% endif %}
                             </div>
                             <div class="small text-muted p-2 rounded"
-                                 style="background:#f8f9fa; white-space:pre-wrap; font-size:12px;">{{ opt.snippet }}</div>
+                                 style="background:#f8f9fa; white-space:pre-wrap; font-size:12px;">
+                                {{ opt.snippet }}
+                            </div>
                         </div>
                         <div class="d-flex gap-1 flex-shrink-0">
                             <a href="{% url 'dashboard:option_delete' opt.pk %}"
@@ -157,33 +101,107 @@
 
 {% block extra_js %}
 <script>
-function showGroupForm() {
-    document.getElementById('groupForm').style.display = 'block';
-}
-function hideGroupForm() {
-    document.getElementById('groupForm').style.display = 'none';
-}
-function showOptionForm() {
-    document.getElementById('optionForm').style.display = 'block';
-}
-function hideOptionForm() {
-    document.getElementById('optionForm').style.display = 'none';
+const channelPromptPk = "{{ channel_prompt.pk }}";
+const selectedGroupPk = "{% if selected_group %}{{ selected_group.pk }}{% endif %}";
+const csrfToken = getCookie('csrftoken');
+
+function openGroupCreate() {
+    const html = `
+    <div class="mb-3">
+        <label class="form-label fw-semibold">그룹 표시명 <span class="text-danger">*</span></label>
+        <input type="text" id="grpLabel" class="form-control"
+               placeholder="예: 톤, 길이, 해시태그">
+    </div>
+    <div class="mb-3">
+        <label class="form-label fw-semibold">그룹 키 <span class="text-danger">*</span></label>
+        <input type="text" id="grpName" class="form-control"
+               placeholder="예: tone, length">
+        <div class="form-text">영문 소문자만 사용</div>
+    </div>`;
+
+    openSlidebar('옵션 그룹 추가', html, function() {
+        const label = document.getElementById('grpLabel').value.trim();
+        const name = document.getElementById('grpName').value.trim();
+        if (!label || !name) { alert('모두 입력해 주세요.'); return; }
+        fetch(`/api/option-group/create/${channelPromptPk}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+            },
+            body: JSON.stringify({ label, name })
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) { closeSlidebar(); location.reload(); }
+            else alert(d.error || '저장 중 오류가 발생했습니다.');
+        });
+    });
 }
 
-function generateSnippet() {
-    const label = document.getElementById('optionLabel').value.trim();
-    if (!label) {
-        alert('옵션명을 먼저 입력하세요.');
-        return;
-    }
-    document.getElementById('snippetLoading').style.display = 'block';
-    document.getElementById('snippetText').value = '';
+function openOptionCreate() {
+    const html = `
+    <div class="mb-3">
+        <label class="form-label fw-semibold">옵션명 <span class="text-danger">*</span></label>
+        <input type="text" id="optLabel" class="form-control"
+               placeholder="예: 친근하게, 전문적으로">
+    </div>
+    <div class="mb-3">
+        <label class="form-label fw-semibold">
+            프롬프트 Snippet
+            <button type="button" class="btn btn-sm btn-outline-primary ms-2"
+                    style="font-size:11px; padding:1px 8px;"
+                    onclick="generateSnippetSlide()">
+                <i class="bi bi-magic"></i> Claude 자동생성
+            </button>
+        </label>
+        <div id="snippetLoadingSlide" style="display:none;"
+             class="small text-muted mt-1">
+            <span class="spinner-border spinner-border-sm"></span> 생성 중...
+        </div>
+        <textarea id="optSnippet" class="form-control" rows="5"
+                  placeholder="Claude에게 전달할 프롬프트 조각"></textarea>
+    </div>
+    <div class="form-check">
+        <input type="checkbox" id="optDefault" class="form-check-input">
+        <label class="form-check-label" for="optDefault">기본 선택</label>
+    </div>`;
+
+    openSlidebar('옵션 추가', html, function() {
+        const label = document.getElementById('optLabel').value.trim();
+        const snippet = document.getElementById('optSnippet').value.trim();
+        if (!label || !snippet) { alert('옵션명과 snippet을 입력해 주세요.'); return; }
+        fetch(`/api/option/create/${selectedGroupPk}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+            },
+            body: JSON.stringify({
+                label,
+                snippet,
+                is_default: document.getElementById('optDefault').checked,
+            })
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) { closeSlidebar(); location.reload(); }
+            else alert(d.error || '저장 중 오류가 발생했습니다.');
+        });
+    });
+}
+
+function generateSnippetSlide() {
+    const label = document.getElementById('optLabel').value.trim();
+    if (!label) { alert('옵션명을 먼저 입력하세요.'); return; }
+    document.getElementById('snippetLoadingSlide').style.display = 'block';
+    document.getElementById('optSnippet').value = '';
 
     fetch('/api/generate-snippet/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token }}',
+            'X-CSRFToken': csrfToken,
         },
         body: JSON.stringify({
             channel: '{{ channel_prompt.channel.name }}',
@@ -194,11 +212,11 @@ function generateSnippet() {
     })
     .then(r => r.json())
     .then(data => {
-        document.getElementById('snippetText').value = data.snippet;
-        document.getElementById('snippetLoading').style.display = 'none';
+        document.getElementById('optSnippet').value = data.snippet;
+        document.getElementById('snippetLoadingSlide').style.display = 'none';
     })
     .catch(() => {
-        document.getElementById('snippetLoading').style.display = 'none';
+        document.getElementById('snippetLoadingSlide').style.display = 'none';
         alert('생성 중 오류가 발생했습니다.');
     });
 }
