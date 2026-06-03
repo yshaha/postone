@@ -23,6 +23,7 @@ urlpatterns = [
     path('users/create/', views.user_create, name='user_create'),
     path('users/<int:pk>/', views.user_detail, name='user_detail'),
     path('users/<int:pk>/edit/', views.user_edit, name='user_edit'),
+    path('users/<int:pk>/delete/', views.user_delete, name='user_delete'),
     path('users/<int:pk>/credit-grant/', views.user_credit_grant, name='user_credit_grant'),
     path('credits/', views.credit_list, name='credit_list'),
     path('credits/charge/', views.credit_charge, name='credit_charge'),

@@ -459,6 +459,17 @@ def content_type_edit(request, pk):
     
 @login_required
 @require_POST
+def user_delete(request, pk):
+    from accounts.models import User
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': '잘못된 요청입니다.'})
+    target_user = get_object_or_404(User, pk=pk)
+    if target_user == request.user:
+        return JsonResponse({'success': False, 'error': '자기 자신은 삭제할 수 없습니다.'})
+    target_user.delete()
+    return JsonResponse({'success': True})
+
+
 def user_edit(request, pk):
     import json
     from accounts.models import User

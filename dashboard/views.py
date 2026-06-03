@@ -272,6 +272,20 @@ def user_edit(request, pk):
 
 
 @login_required
+def user_delete(request, pk):
+    from accounts.models import User
+    target_user = get_object_or_404(User, pk=pk)
+    if request.method == 'POST':
+        if target_user == request.user:
+            messages.error(request, '자기 자신은 삭제할 수 없습니다.')
+            return redirect('dashboard:user_detail', pk=pk)
+        target_user.delete()
+        messages.success(request, '회원이 삭제됐습니다.')
+        return redirect('dashboard:user_list')
+    return redirect('dashboard:user_detail', pk=pk)
+
+
+@login_required
 def user_credit_grant(request, pk):
     from accounts.models import User
     target_user = get_object_or_404(User, pk=pk)

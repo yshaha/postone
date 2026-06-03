@@ -11,6 +11,7 @@ urlpatterns = [
     path('get-combined-prompt/', api.get_combined_prompt, name='api_get_combined_prompt'),
     path('user/<int:pk>/edit/', api.user_edit, name='api_user_edit'),
     path('user/<int:pk>/credit-grant/', api.user_credit_grant, name='api_user_credit_grant'),
+    path('user/<int:pk>/delete/', api.user_delete, name='api_user_delete'),
     path('option-group/create/<int:channel_prompt_pk>/', api.option_group_create, name='api_option_group_create'),
     path('option/create/<int:group_pk>/', api.option_create, name='api_option_create'),
     path('menu-permission/<int:pk>/toggle/', api.menu_permission_toggle, name='api_menu_permission_toggle'),
