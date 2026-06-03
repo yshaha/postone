@@ -461,6 +461,7 @@ def content_type_edit(request, pk):
 @require_POST
 def user_delete(request, pk):
     from accounts.models import User
+    from django.shortcuts import get_object_or_404
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': '잘못된 요청입니다.'})
     target_user = get_object_or_404(User, pk=pk)
