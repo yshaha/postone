@@ -10,6 +10,10 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',') + ['web-production-f99c.up.railway.app', '.railway.app']
 
+CSRF_TRUSTED_ORIGINS = [
+    'https://web-production-f99c.up.railway.app',
+]
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
