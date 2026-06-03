@@ -459,6 +459,33 @@ def content_type_edit(request, pk):
     
 @login_required
 @require_POST
+@login_required
+def profile_edit(request):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': '잘못된 요청입니다.'})
+    import json
+    data = json.loads(request.body)
+    request.user.first_name = data.get('first_name', '')
+    request.user.email = data.get('email', '')
+    request.user.company = data.get('company', '')
+    request.user.phone = data.get('phone', '')
+    request.user.save()
+    return JsonResponse({'success': True})
+
+
+@login_required
+def profile_withdraw(request):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': '잘못된 요청입니다.'})
+    if request.user.role == 'master':
+        return JsonResponse({'success': False, 'error': '마스터 계정은 탈퇴할 수 없습니다.'})
+    user = request.user
+    from django.contrib.auth import logout
+    logout(request)
+    user.delete()
+    return JsonResponse({'success': True})
+
+
 def user_delete(request, pk):
     from accounts.models import User
     from django.shortcuts import get_object_or_404

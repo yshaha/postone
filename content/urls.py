@@ -20,4 +20,6 @@ urlpatterns = [
     path('channel/<int:pk>/edit/', api.channel_edit, name='api_channel_edit'),
     path('content-type/create/', api.content_type_create, name='api_content_type_create'),
     path('content-type/<int:pk>/edit/', api.content_type_edit, name='api_content_type_edit'),
+    path('profile/edit/', api.profile_edit, name='api_profile_edit'),
+    path('profile/withdraw/', api.profile_withdraw, name='api_profile_withdraw'),
 ]

@@ -1,5 +1,4 @@
 """URLs module"""
-
 from django.conf import settings
 from django.urls import path
 from social_core.utils import setting_name
